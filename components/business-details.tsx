@@ -8,13 +8,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface BusinessDetailsProps {
-  onComplete: () => void;
+  onComplete: (details: any) => void;
 }
 
 interface BoardMember {
   name: string;
   position: string;
   idNumber: string;
+}
+
+interface BusinessFormData {
+  businessName: string;
+  registrationNumber: string;
+  businessAddress: string;
+  businessType: string;
+  boardMembers: BoardMember[];
 }
 
 export function BusinessDetails({ onComplete }: BusinessDetailsProps) {
@@ -36,9 +44,17 @@ export function BusinessDetails({ onComplete }: BusinessDetailsProps) {
     setBoardMembers(newBoardMembers);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    onComplete();
+    const formData = new FormData(e.currentTarget);
+    const businessDetails: BusinessFormData = {
+      businessName: formData.get('businessName') as string,
+      registrationNumber: formData.get('registrationNumber') as string,
+      businessAddress: formData.get('businessAddress') as string,
+      businessType: formData.get('businessType') as string,
+      boardMembers
+    };
+    onComplete(businessDetails);
   };
 
   return (
@@ -54,22 +70,22 @@ export function BusinessDetails({ onComplete }: BusinessDetailsProps) {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="businessName">Business Name</Label>
-            <Input id="businessName" required />
+            <Input id="businessName" name="businessName" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="registrationNumber">Registration Number</Label>
-            <Input id="registrationNumber" required />
+            <Input id="registrationNumber" name="registrationNumber" required />
           </div>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="businessAddress">Business Address</Label>
-          <Textarea id="businessAddress" required />
+          <Textarea id="businessAddress" name="businessAddress" required />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="businessType">Type of Business</Label>
-          <Input id="businessType" required />
+          <Input id="businessType" name="businessType" required />
         </div>
       </div>
 
@@ -108,7 +124,7 @@ export function BusinessDetails({ onComplete }: BusinessDetailsProps) {
                 <Label>Full Name</Label>
                 <Input
                   value={member.name}
-                  onChange={(e) => updateBoardMember(index, 'name', e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateBoardMember(index, 'name', e.target.value)}
                   required
                 />
               </div>
@@ -116,7 +132,7 @@ export function BusinessDetails({ onComplete }: BusinessDetailsProps) {
                 <Label>Position</Label>
                 <Input
                   value={member.position}
-                  onChange={(e) => updateBoardMember(index, 'position', e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateBoardMember(index, 'position', e.target.value)}
                   required
                 />
               </div>
@@ -124,7 +140,7 @@ export function BusinessDetails({ onComplete }: BusinessDetailsProps) {
                 <Label>Ghana Card Number</Label>
                 <Input
                   value={member.idNumber}
-                  onChange={(e) => updateBoardMember(index, 'idNumber', e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateBoardMember(index, 'idNumber', e.target.value)}
                   placeholder="GHA-XXXXXXXXX-X"
                   pattern="GHA-\d{9}-\d"
                   required

@@ -19,7 +19,8 @@ export async function decrypt(token: string): Promise<any> {
 }
 
 export async function getSession() {
-  const token = cookies().get('token')?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
   if (!token) return null;
   try {
     return await decrypt(token);

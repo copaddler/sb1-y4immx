@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("staff")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model AccountType {
+  id            String   @id @default(uuid())
+  name          String   @unique
+  type          String
+  description   String
+  monthlyFee    Decimal
+  features      String[]
+  requirements  Requirement[]
+  customFields  CustomField[]
+  applications  Application[]
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("account_types")
+}
+
+model Requirement {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  required    Boolean  @default(true)
+  accountType AccountType @relation(fields: [accountTypeId], references: [id], onDelete: Cascade)
+  accountTypeId String
+
+  @@map("requirements")
+}
+
+model CustomField {
+  id          String   @id @default(uuid())
+  name        String
+  label       String
+  type        String
+  required    Boolean  @default(false)
+  options     String[]
+  validation  Validation? @relation(fields: [validationId], references: [id])
+  validationId String? @unique
+  accountType AccountType @relation(fields: [accountTypeId], references: [id], onDelete: Cascade)
+  accountTypeId String
+
+  @@map("custom_fields")
+}
+
+model Validation {
+  id      String @id @default(uuid())
+  pattern String?
+  message String?
+  customField CustomField?
+
+  @@map("validations")
+}
+
+model Application {
+  id                String   @id @default(uuid())
+  accountType       AccountType @relation(fields: [accountTypeId], references: [id])
+  accountTypeId     String
+  applicationType   String
+  status            String   @default("pending")
+  ghanaCard         String
+  customFieldValues CustomFieldValue[]
+  businessDetails  BusinessDetails?
+  notes             String?
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("applications")
+}
+
+model BusinessDetails {
+  id             String        @id @default(uuid())
+  businessName    String
+  registrationNumber String
+  businessType    String
+  businessAddress String
+  boardMembers    BoardMember[]
+  application    Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId   String @unique
+
+  @@map("business_details")
+}
+
+model BoardMember {
+  id              String        @id @default(uuid())
+  name            String
+  position        String
+  ghanaCardNumber String
+  businessDetails BusinessDetails @relation(fields: [businessDetailsId], references: [id], onDelete: Cascade)
+  businessDetailsId String
+
+  @@map("board_members")
+}
+
+model CustomFieldValue {
+  id            String      @id @default(uuid())
+  fieldId       String
+  value         String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId String
+
+  @@map("custom_field_values")
+}

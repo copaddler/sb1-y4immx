@@ -8,9 +8,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
+interface Requirement {
+  name: string;
+  description: string;
+  required: boolean;
+}
+
 export function AccountTypeForm() {
   const [features, setFeatures] = useState<string[]>(['']);
-  const [requirements, setRequirements] = useState<Array<{ name: string; description: string; required: boolean }>>([
+  const [requirements, setRequirements] = useState<Requirement[]>([
     { name: '', description: '', required: true }
   ]);
   const { toast } = useToast();
@@ -37,17 +43,32 @@ export function AccountTypeForm() {
     setRequirements(requirements.filter((_, i) => i !== index));
   };
 
-  const updateRequirement = (index: number, field: keyof typeof requirements[0], value: any) => {
+  const updateRequirement = (index: number, field: keyof Requirement, value: string | boolean) => {
     const newRequirements = [...requirements];
-    newRequirements[index][field] = value;
+    newRequirements[index] = {
+      ...newRequirements[index],
+      [field]: value
+    };
     setRequirements(newRequirements);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
     
     try {
+      const accountTypeData = {
+        name: formData.get('name'),
+        type: formData.get('type'),
+        description: formData.get('description'),
+        monthlyFee: parseFloat(formData.get('monthlyFee') as string),
+        features: features.filter(f => f.trim() !== ''),
+        requirements: requirements.filter(r => r.name.trim() !== '')
+      };
+
       // Add API call here
+      console.log('Submitting:', accountTypeData);
+      
       toast({
         title: 'Success',
         description: 'Account type has been created successfully.',
@@ -66,13 +87,14 @@ export function AccountTypeForm() {
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="name">Account Type Name</Label>
-          <Input id="name" required />
+          <Input id="name" name="name" required />
         </div>
         
         <div className="space-y-2">
           <Label htmlFor="type">Type</Label>
           <select
             id="type"
+            name="type"
             className="w-full rounded-md border border-input bg-background px-3 py-2"
             required
           >
@@ -84,12 +106,12 @@ export function AccountTypeForm() {
 
       <div className="space-y-2">
         <Label htmlFor="description">Description</Label>
-        <Textarea id="description" required />
+        <Textarea id="description" name="description" required />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="monthlyFee">Monthly Fee (GHS)</Label>
-        <Input id="monthlyFee" type="number" min="0" step="0.01" required />
+        <Input id="monthlyFee" name="monthlyFee" type="number" min="0" step="0.01" required />
       </div>
 
       <div className="space-y-4">
@@ -105,7 +127,7 @@ export function AccountTypeForm() {
           <div key={index} className="flex gap-2">
             <Input
               value={feature}
-              onChange={(e) => updateFeature(index, e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateFeature(index, e.target.value)}
               placeholder="Enter feature description"
               required
             />
@@ -138,13 +160,13 @@ export function AccountTypeForm() {
               <div className="space-y-2 flex-1">
                 <Input
                   value={req.name}
-                  onChange={(e) => updateRequirement(index, 'name', e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateRequirement(index, 'name', e.target.value)}
                   placeholder="Requirement name"
                   required
                 />
                 <Textarea
                   value={req.description}
-                  onChange={(e) => updateRequirement(index, 'description', e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateRequirement(index, 'description', e.target.value)}
                   placeholder="Requirement description"
                   required
                 />
@@ -153,7 +175,7 @@ export function AccountTypeForm() {
                     type="checkbox"
                     id={`required-${index}`}
                     checked={req.required}
-                    onChange={(e) => updateRequirement(index, 'required', e.target.checked)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateRequirement(index, 'required', e.target.checked)}
                     className="rounded border-gray-300"
                   />
                   <Label htmlFor={`required-${index}`}>Required</Label>

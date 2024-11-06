@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { z } from 'zod';
 
+// Configure dynamic behavior for the API route
+export const dynamic = 'force-dynamic';
+
 const boardMemberSchema = z.object({
   name: z.string(),
   position: z.string(),
@@ -37,33 +40,41 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = applicationSchema.parse(body);
 
-    const application = await prisma.application.create({
-      data: {
-        applicationType: data.applicationType,
-        accountType: data.accountType,
-        ghanaCard: data.ghanaCard,
-        userId: session.id,
-        ...(data.businessDetails && {
-          businessDetails: {
-            create: {
-              ...data.businessDetails,
-              boardMembers: {
-                create: data.businessDetails.boardMembers,
+    try {
+      const application = await prisma.application.create({
+        data: {
+          applicationType: data.applicationType,
+          accountType: data.accountType,
+          ghanaCard: data.ghanaCard,
+          userId: session.id,
+          ...(data.businessDetails && {
+            businessDetails: {
+              create: {
+                ...data.businessDetails,
+                boardMembers: {
+                  create: data.businessDetails.boardMembers,
+                },
               },
             },
-          },
-        }),
-      },
-      include: {
-        businessDetails: {
-          include: {
-            boardMembers: true,
+          }),
+        },
+        include: {
+          businessDetails: {
+            include: {
+              boardMembers: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    return NextResponse.json(application, { status: 201 });
+      return NextResponse.json(application, { status: 201 });
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      return NextResponse.json(
+        { error: 'Failed to create application' },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -72,6 +83,7 @@ export async function POST(request: Request) {
       );
     }
 
+    console.error('Unexpected error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -89,21 +101,30 @@ export async function GET(request: Request) {
       );
     }
 
-    const applications = await prisma.application.findMany({
-      where: {
-        userId: session.id,
-      },
-      include: {
-        businessDetails: {
-          include: {
-            boardMembers: true,
+    try {
+      const applications = await prisma.application.findMany({
+        where: {
+          userId: session.id,
+        },
+        include: {
+          businessDetails: {
+            include: {
+              boardMembers: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    return NextResponse.json(applications);
+      return NextResponse.json(applications);
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      return NextResponse.json(
+        { error: 'Failed to fetch applications' },
+        { status: 500 }
+      );
+    }
   } catch (error) {
+    console.error('Unexpected error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
