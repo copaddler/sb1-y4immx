@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String
+  role          String    @default("user") // user, admin, manager
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  applications  Application[]
+}
+
+model Application {
+  id              String    @id @default(cuid())
+  status          String    @default("pending") // pending, approved, rejected
+  applicationType String    // individual, business
+  accountTypeId   String
+  accountType     AccountType @relation(fields: [accountTypeId], references: [id])
+  ghanaCard       String
+  phone           String
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  businessDetails BusinessDetails?
+  documents       Document[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model AccountType {
+  id              String    @id @default(cuid())
+  name            String
+  description     String
+  type            String    // individual, business
+  monthlyFee      Float
+  features        Feature[]
+  requirements    Requirement[]
+  applications    Application[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Feature {
+  id            String    @id @default(cuid())
+  description   String
+  accountTypeId String
+  accountType   AccountType @relation(fields: [accountTypeId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Requirement {
+  id            String    @id @default(cuid())
+  name          String
+  description   String
+  required      Boolean   @default(true)
+  accountTypeId String
+  accountType   AccountType @relation(fields: [accountTypeId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Document {
+  id            String    @id @default(cuid())
+  name          String
+  type          String
+  url           String
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model BusinessDetails {
+  id                String    @id @default(cuid())
+  businessName      String
+  registrationNumber String
+  businessType      String
+  businessAddress   String
+  applicationId     String    @unique
+  application       Application @relation(fields: [applicationId], references: [id])
+  boardMembers      BoardMember[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model BoardMember {
+  id                String    @id @default(cuid())
+  name              String
+  position          String
+  ghanaCardNumber   String
+  businessDetailsId String
+  businessDetails   BusinessDetails @relation(fields: [businessDetailsId], references: [id])
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
